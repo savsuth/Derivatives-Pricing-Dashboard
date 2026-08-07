@@ -24,7 +24,7 @@ The app is designed for clarity and experimentation — perfect for students, re
   - User-defined ranges for Spot Price and Volatility for heatmaps.
 
 ---
-## 🔧 Dependencies
+## Dependencies
 
 - **pandas**: For handling and displaying tabular input/output data  
 - **numpy**: For mathematical and numerical operations  
