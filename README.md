@@ -1,4 +1,4 @@
-# 📊 Derivatives Pricing Dashboard
+# Derivatives Pricing Dashboard
 
 An interactive **Black–Scholes option pricing dashboard** built with **Streamlit**, enabling users to explore how option prices behave under different market conditions.  
 The app is designed for clarity and experimentation — perfect for students, researchers, and finance enthusiasts.
