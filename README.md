@@ -30,7 +30,14 @@ An interactive **Black–Scholes option pricing dashboard** built with **Streaml
 - **numpy**: For mathematical and numerical operations  
 - **scipy**: For statistical functions  
 - **matplotlib**: For plotting static heatmaps  
-- **seaborn**: For visually enhanced heatmap styles  
+- **seaborn**: For visually enhanced heatmap styles
+
+## Installation
+
+git clone https://github.com/savsuth/BlackScholes-Pricing-Dashboard.git
+cd BlackScholes-Pricing-Dashboard
+pip install -r requirements.txt
+streamlit run streamlit_app.py
 
 ##  Results
 
