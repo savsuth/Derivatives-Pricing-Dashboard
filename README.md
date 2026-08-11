@@ -1,7 +1,6 @@
 # Derivatives Pricing Dashboard
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![Streamlit](https://img.shields.io/badge/streamlit-app-red?logo=streamlit&logoColor=white)
 ![License](https://img.shields.io/github/license/savsuth/BlackScholes-Pricing-Dashboard)
 
 An interactive **Black–Scholes option pricing dashboard** built with **Streamlit**, enabling users to explore how option prices behave under different market conditions.
