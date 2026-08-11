@@ -33,14 +33,14 @@ An interactive **Black–Scholes option pricing dashboard** built with **Streaml
 - **seaborn**: For visually enhanced heatmap styles
 
 ## Installation
-
+```bash
 git clone https://github.com/savsuth/BlackScholes-Pricing-Dashboard.git
 cd BlackScholes-Pricing-Dashboard
 pip install -r requirements.txt
 streamlit run streamlit_app.py
+```
 
 ##  Results
-
 ### Dashboard Overview
 <p align="center">
   <img src="Img-1.png" alt="Dashboard Overview" width="45%"/>
