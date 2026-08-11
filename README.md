@@ -1,4 +1,4 @@
-# Derivatives Pricing Dashboard
+# BlackScholes Derivatives Pricing Dashboard
 
 An interactive **Black–Scholes option pricing dashboard** built with **Streamlit**, enabling users to explore how option prices behave under different market conditions.  
 
