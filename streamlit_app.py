@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from scipy.stats import norm
-from numpy import log, sqrt, exp
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+from BlackScholes import BlackScholes
 
 # -------------------- Page setup --------------------
 st.set_page_config(
@@ -23,51 +23,6 @@ st.markdown("""
 .metric-label{font-size:0.95rem;margin-bottom:4px}
 </style>
 """, unsafe_allow_html=True)
-
-# -------------------- Model --------------------
-class BlackScholes:
-    def __init__(self, time_to_maturity: float, strike: float, current_price: float,
-                 volatility: float, interest_rate: float):
-        self.time_to_maturity = float(time_to_maturity)
-        self.strike = float(strike)
-        self.current_price = float(current_price)
-        self.volatility = float(volatility)
-        self.interest_rate = float(interest_rate)
-        self.call_price = 0.0
-        self.put_price = 0.0
-        self.call_delta = 0.0
-        self.put_delta = 0.0
-        self.call_gamma = 0.0
-        self.put_gamma = 0.0
-
-    def calculate_prices(self):
-        T = self.time_to_maturity
-        K = self.strike
-        S = self.current_price
-        sigma = self.volatility
-        r = self.interest_rate
-
-        # Guard rails to avoid nan/inf
-        if T <= 0 or sigma <= 0 or S <= 0 or K <= 0:
-            self.call_price = max(S - K, 0.0)
-            self.put_price = max(K - S, 0.0)
-            self.call_delta = 1.0 if S > K else 0.0
-            self.put_delta = 1.0 if K > S else 0.0
-            self.call_gamma = 0.0
-            self.put_gamma = 0.0
-            return self.call_price, self.put_price
-
-        d1 = (log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * sqrt(T))
-        d2 = d1 - sigma * sqrt(T)
-
-        self.call_price = S * norm.cdf(d1) - K * exp(-r * T) * norm.cdf(d2)
-        self.put_price = K * exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
-
-        self.call_delta = norm.cdf(d1)
-        self.put_delta = self.call_delta - 1.0
-        self.call_gamma = norm.pdf(d1) / (S * sigma * sqrt(T))
-        self.put_gamma = self.call_gamma
-        return self.call_price, self.put_price
 
 # -------------------- Sidebar inputs --------------------
 with st.sidebar:
@@ -93,21 +48,14 @@ vol_range = np.linspace(vol_min, vol_max, 10)
 
 # -------------------- Heatmap helper --------------------
 def plot_heatmap(bs_model: BlackScholes, spot_range, vol_range, strike_val):
-    call_prices = np.zeros((len(vol_range), len(spot_range)))
-    put_prices = np.zeros_like(call_prices)
-
-    for i, vol in enumerate(vol_range):
-        for j, spot in enumerate(spot_range):
-            bs_temp = BlackScholes(
-                time_to_maturity=bs_model.time_to_maturity,
-                strike=strike_val,
-                current_price=spot,
-                volatility=vol,
-                interest_rate=bs_model.interest_rate,
-            )
-            bs_temp.calculate_prices()
-            call_prices[i, j] = bs_temp.call_price
-            put_prices[i, j] = bs_temp.put_price
+    # One broadcast call: rows are volatilities, columns are spots.
+    call_prices, put_prices = BlackScholes(
+        time_to_maturity=bs_model.time_to_maturity,
+        strike=strike_val,
+        current_price=spot_range[None, :],
+        volatility=vol_range[:, None],
+        interest_rate=bs_model.interest_rate,
+    ).calculate_prices()
 
     fig_call, ax_call = plt.subplots(figsize=(9, 7))
     sns.heatmap(

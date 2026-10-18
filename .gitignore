@@ -13,3 +13,6 @@ env/
 # IDE
 .idea/
 .vscode/
+
+# Test tooling
+.hypothesis/
