@@ -353,10 +353,10 @@ class SingleImplementation(unittest.TestCase):
         self.assertAlmostEqual(call, 4.87705755, places=8)
         self.assertEqual(put, 0.0)
 
-    def test_app_uses_module_not_its_own_copy(self):
-        src = (ROOT / "streamlit_app.py").read_text()
+    def test_api_uses_module_not_its_own_copy(self):
+        src = (ROOT / "api" / "quote.py").read_text()
         self.assertRegex(src, r"(?m)^from BlackScholes import BlackScholes")
-        self.assertIsNone(re.search(r"(?m)^class BlackScholes", src))
+        self.assertIsNone(re.search(r"(?m)^class BlackScholes|norm\.cdf", src))
 
 
 if __name__ == "__main__":

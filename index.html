@@ -2,35 +2,107 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Derivatives Pricing Dashboard</title>
-    <meta name="description" content="Black-Scholes option prices, Greeks and heatmaps, running Streamlit in the browser via stlite." />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@stlite/browser@1.9.2/build/stlite.css" />
-    <style>
-      html, body { margin: 0; background: #0e1117; color: #fafafa; }
-    </style>
+    <meta name="description" content="Black-Scholes prices and Greeks for European options, with each Greek checked live by a bump-and-reprice of the same tested model and prices checked by put-call parity." />
+    <meta name="color-scheme" content="dark" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.18.10/dist/katex.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.18.10/dist/katex.min.js"></script>
+    <script defer src="app.js"></script>
   </head>
   <body>
-    <div id="root"></div>
-    <noscript>This dashboard runs Python in your browser and needs JavaScript enabled.</noscript>
-    <script type="module">
-      // The same streamlit_app.py and BlackScholes.py from the repository run here
-      // under Pyodide, so the hosted demo uses the tested pricing code as-is.
-      import { mount } from "https://cdn.jsdelivr.net/npm/@stlite/browser@1.9.2/build/stlite.js";
+    <!--
+      THESIS: The pricer as a live worked example from a quant textbook, printed in
+        reverse: numbered equations, a booktabs table and captioned figures on a black
+        page. It refuses the metric-tile dashboard.
+      OWN-WORLD: Near-black ground, warm off-white ink, one pale spot blue for focus and
+        figures, 1px and 1.5px booktabs rules, STIX Two Text throughout, tabular
+        numerals, square corners, no cards, no shadows.
+      STORY: A reviewer reads the formula, the prices and every Greek, sees a live
+        bump-and-reprice check beside each one, and concludes the pricing is right.
+      FIRST VIEWPORT: Inputs in the left margin; title and one-line lede; Equations
+        (1) to (3) with today's prices; Table 1 with calls left, puts right, shared
+        Greeks centered across them, units and the check column.
+      FORM: Textbook Plates, grounded candidate 5 of 7, seed a65a2ba2; dark ground
+        pinned by the user.
+      FINISH: unreviewed and undocumented is unfinished; this build ends with the
+        finish review, the verdict, DESIGN.md, and every shipping raster carrying its
+        provenance
+    -->
+    <div class="page">
+      <header class="head">
+        <h1>Derivatives Pricing Dashboard</h1>
+        <p class="lede">Black–Scholes prices and Greeks for European options, from one model tested against QuantLib, complex-step derivatives and no-arbitrage properties.</p>
+        <p id="status" class="status" role="status" aria-live="polite">Pricing…</p>
+      </header>
 
-      mount(
-        {
-          entrypoint: "streamlit_app.py",
-          requirements: ["numpy", "scipy", "pandas", "matplotlib", "seaborn"],
-          files: {
-            "streamlit_app.py": { url: "./streamlit_app.py" },
-            "BlackScholes.py": { url: "./BlackScholes.py" },
-            ".streamlit/config.toml": { url: "./.streamlit/config.toml" },
-          },
-          streamlitConfig: { "client.toolbarMode": "viewer" },
-        },
-        document.getElementById("root"),
-      );
-    </script>
+      <aside class="margin" aria-label="Inputs">
+        <form id="inputs" autocomplete="off" novalidate>
+          <h2>Inputs</h2>
+          <label><span>Spot price <i>S</i></span><input name="S" type="number" value="100" min="0.01" step="0.5" inputmode="decimal" /></label>
+          <label><span>Strike <i>K</i></span><input name="K" type="number" value="100" min="0.01" step="0.5" inputmode="decimal" /></label>
+          <label><span>Time to maturity <i>T</i> (years)</span><input name="T" type="number" value="1" min="0" step="0.05" inputmode="decimal" /></label>
+          <label><span>Volatility <i>σ</i></span><input name="sigma" type="number" value="0.20" min="0" step="0.01" inputmode="decimal" /></label>
+          <label><span>Risk-free rate <i>r</i></span><input name="r" type="number" value="0.05" min="-0.5" step="0.01" inputmode="decimal" /></label>
+          <div class="ranges-head">
+            <h2 id="ranges-title">Heatmap ranges</h2>
+            <button type="button" class="ranges-toggle" aria-expanded="true" aria-controls="ranges" aria-labelledby="ranges-title"><span class="bars" aria-hidden="true"></span></button>
+          </div>
+          <div class="ranges" id="ranges">
+          <div class="pair">
+            <label><span>Lowest spot</span><input name="spot_min" type="number" value="60" min="0.01" step="1" inputmode="decimal" /></label>
+            <label><span>Highest spot</span><input name="spot_max" type="number" value="140" min="0.01" step="1" inputmode="decimal" /></label>
+          </div>
+          <div class="pair">
+            <label><span>Lowest <i>σ</i></span><input name="vol_min" type="number" value="0.05" min="0.01" step="0.01" inputmode="decimal" /></label>
+            <label><span>Highest <i>σ</i></span><input name="vol_max" type="number" value="0.60" min="0.02" step="0.01" inputmode="decimal" /></label>
+          </div>
+          </div>
+        </form>
+      </aside>
+
+      <main id="main" aria-busy="true">
+        <section class="equations" aria-label="Pricing equations">
+          <div id="eq-call" class="equation"></div>
+          <div id="eq-put" class="equation"></div>
+          <div id="eq-d" class="equation"></div>
+          <p id="where" class="where"></p>
+        </section>
+
+        <section class="plate" aria-labelledby="table-caption">
+          <p id="table-caption" class="caption"><b>Table 1.</b> Prices and Greeks at the current inputs. Calls sit left and puts right; Greeks shared by both are centered between them. The last column is the live check.</p>
+          <div class="table-scroll">
+            <table class="booktabs">
+              <thead>
+                <tr><th class="quantity" scope="col">Quantity</th><th scope="col">Call</th><th scope="col">Put</th><th class="unit" scope="col">Unit</th><th class="check" scope="col"><span class="long">Bump-and-reprice difference</span><span class="short">Check</span></th></tr>
+              </thead>
+              <tbody id="greeks"></tbody>
+            </table>
+          </div>
+          <p class="footnote">† Put–call parity residual |c − p − (S − Ke<sup>−rT</sup>)|.</p>
+        </section>
+
+        <section class="figures">
+          <figure>
+            <div class="heatmap" id="heat-call" role="img" aria-label="Call value heatmap"></div>
+            <figcaption><b>Figure 1.</b> Call value across spot and volatility at <span class="conditions"></span>. The cross marks the current inputs.</figcaption>
+          </figure>
+          <figure>
+            <div class="heatmap" id="heat-put" role="img" aria-label="Put value heatmap"></div>
+            <figcaption><b>Figure 2.</b> Put value across spot and volatility at <span class="conditions"></span>. The cross marks the current inputs.</figcaption>
+          </figure>
+        </section>
+
+        <section class="notes" aria-label="Notes">
+          <p><b>Model.</b> European options on a non-dividend-paying asset under Black–Scholes assumptions, computed by <code>BlackScholes.py</code> in a Vercel Python function.</p>
+          <p><b>Units.</b> Vega and rho per percentage point, theta and charm per calendar day, vanna per vol point, volga per vol point squared.</p>
+          <p id="limits-note" hidden><b>Limits.</b> When σ√T = 0, every value is its limit as σ or T approaches zero; ∞ marks a Greek that diverges exactly at the strike.</p>
+          <p><b>Checks.</b> The last column of Table 1 reprices the option with small bumps to S, σ, T and r and reports the absolute difference from the closed form; the price row checks put–call parity. The <a href="https://github.com/savsuth/Derivatives-Pricing-Dashboard/tree/main/tests">test suite</a> also compares 2,000 random cases against QuantLib 1.44.</p>
+        </section>
+
+        <footer class="credit">Created by Aasav Suthar • For educational use only</footer>
+      </main>
+    </div>
   </body>
 </html>

@@ -3,10 +3,9 @@
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/github/license/savsuth/BlackScholes-Pricing-Dashboard)
 
-An interactive **Black–Scholes option pricing dashboard** built with **Streamlit**, enabling users to explore how option prices behave under different market conditions.
-An interactive **Black–Scholes option pricing dashboard** built with **Streamlit**, enabling users to explore how option prices behave under different market conditions.  
+An interactive **Black–Scholes option pricing dashboard**: a static page on Vercel that calls a Vercel Python function, which prices everything with the tested `BlackScholes.py` model.
 
-**Live demo:** [derivatives-pricing-dashboard.vercel.app](https://derivatives-pricing-dashboard.vercel.app). It runs the same `streamlit_app.py` in your browser through [stlite](https://github.com/whitphx/stlite), so the first load downloads Python and takes about 20 seconds.
+**Live demo:** [derivatives-pricing-dashboard.vercel.app](https://derivatives-pricing-dashboard.vercel.app)
 
 ---
 
@@ -14,7 +13,8 @@ An interactive **Black–Scholes option pricing dashboard** built with **Streaml
 
 - **Option Pricing Calculator**
   - Compute European **Call** and **Put** option prices instantly.
-  - Visualize values in a clean, responsive layout.
+  - Full Greeks (delta, gamma, vega, theta, rho, vanna, volga, charm) in trader units.
+  - A live check column: each Greek is compared against a bump-and-reprice of the same model, and prices against put–call parity.
 
 - **Interactive Heatmaps**
   - Explore how option prices vary with **Spot Price** and **Volatility** ranges.
@@ -31,18 +31,17 @@ An interactive **Black–Scholes option pricing dashboard** built with **Streaml
 ---
 ## Dependencies
 
-- **pandas**: For handling and displaying tabular input/output data  
 - **numpy**: For mathematical and numerical operations  
 - **scipy**: For statistical functions  
-- **matplotlib**: For plotting static heatmaps  
-- **seaborn**: For visually enhanced heatmap styles
+- Test-only: **hypothesis** and **QuantLib** (`requirements-dev.txt`)
 
 ## Installation
 ```bash
-git clone https://github.com/savsuth/BlackScholes-Pricing-Dashboard.git
-cd BlackScholes-Pricing-Dashboard
-pip install -r requirements.txt
-streamlit run streamlit_app.py
+git clone https://github.com/savsuth/Derivatives-Pricing-Dashboard.git
+cd Derivatives-Pricing-Dashboard
+pip install -r requirements.txt -r requirements-dev.txt
+python3 dev_server.py              # http://localhost:3000
+python3 -m unittest discover -s tests
 ```
 
 ##  Results

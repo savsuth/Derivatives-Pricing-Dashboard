@@ -1,0 +1,192 @@
+/* STIX Two Text, pinned at @fontsource/stix-two-text@5.3.0: Latin, Latin-ext (for the dagger) and Greek. */
+@font-face {
+  font-family: "STIX Two Text"; font-weight: 400; font-style: normal; font-display: swap;
+  src: url("https://cdn.jsdelivr.net/npm/@fontsource/stix-two-text@5.3.0/files/stix-two-text-latin-400-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "STIX Two Text"; font-weight: 400; font-style: italic; font-display: swap;
+  src: url("https://cdn.jsdelivr.net/npm/@fontsource/stix-two-text@5.3.0/files/stix-two-text-latin-400-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "STIX Two Text"; font-weight: 600; font-style: normal; font-display: swap;
+  src: url("https://cdn.jsdelivr.net/npm/@fontsource/stix-two-text@5.3.0/files/stix-two-text-latin-600-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "STIX Two Text"; font-weight: 400; font-style: normal; font-display: swap;
+  src: url("https://cdn.jsdelivr.net/npm/@fontsource/stix-two-text@5.3.0/files/stix-two-text-latin-ext-400-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "STIX Two Text"; font-weight: 400; font-style: normal; font-display: swap;
+  src: url("https://cdn.jsdelivr.net/npm/@fontsource/stix-two-text@5.3.0/files/stix-two-text-greek-400-normal.woff2") format("woff2");
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+@font-face {
+  font-family: "STIX Two Text"; font-weight: 400; font-style: italic; font-display: swap;
+  src: url("https://cdn.jsdelivr.net/npm/@fontsource/stix-two-text@5.3.0/files/stix-two-text-greek-400-italic.woff2") format("woff2");
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+
+:root {
+  --ground: #0a0b0d;
+  --field: #14130f;
+  --ink: #ebe6dc;
+  --muted: #a69f93;
+  --rule: #3b3731;
+  --field-border: #7a7368;  /* 3.97:1 on --field: the 3:1 non-text floor for controls */
+  --spot: #8db2f0;
+  --error: #f0a39a;
+  --serif: "STIX Two Text", "Times New Roman", serif;
+  --gap: 0.9rem;
+}
+
+* { box-sizing: border-box; }
+html { background: var(--ground); color: var(--ink); color-scheme: dark; }
+body {
+  margin: 0; font-family: var(--serif); font-size: 1rem; line-height: 1.5;
+  font-variant-numeric: lining-nums tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: #2b4673; color: var(--ink); }
+a { color: var(--spot); text-underline-offset: 0.18em; }
+:focus-visible { outline: 2px solid var(--spot); outline-offset: 2px; }
+code { font-family: inherit; font-style: italic; }
+
+/* Desktop: inputs in the left margin, title and plates to the right. Phones: title, inputs, plates. */
+.page {
+  display: grid; grid-template-columns: 17rem minmax(0, 1fr);
+  grid-template-areas: "margin head" "margin main"; grid-template-rows: auto 1fr; min-height: 100vh;
+}
+.head { grid-area: head; padding: 2.5rem 3rem 0; max-width: 64rem; }
+.margin { grid-area: margin; border-right: 1px solid var(--rule); padding: 2.25rem 1.5rem; }
+main { grid-area: main; padding: 0 3rem 3rem; max-width: 64rem; }
+
+.margin form { position: sticky; top: 2.25rem; display: grid; gap: var(--gap); }
+.margin h2 { font-size: 1.15rem; font-weight: 600; margin: 0; }
+.margin label { display: grid; gap: 0.3rem; font-size: 0.95rem; }
+.ranges-head { display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem; }
+.ranges { display: grid; gap: var(--gap); }
+.margin .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.margin input {
+  font: inherit; color: var(--ink); background: var(--field);
+  border: 1px solid var(--field-border); border-radius: 0; padding: 0.45rem 0.6rem; width: 100%;
+  transition: border-color 150ms ease-out;
+}
+.margin input:hover { border-color: var(--muted); }
+.margin input:focus-visible { border-color: var(--spot); outline-offset: 0; }
+.margin input[aria-invalid="true"] { border-color: var(--error); }
+
+/* The ranges toggle exists only on phones. Its plus/minus is drawn from two bars. */
+.ranges-toggle { display: none; }
+.ranges-toggle .bars { position: relative; display: block; width: 0.8rem; height: 0.8rem; }
+.ranges-toggle .bars::before, .ranges-toggle .bars::after {
+  content: ""; position: absolute; background: var(--muted); transition: transform 150ms ease-out;
+}
+.ranges-toggle .bars::before { left: 0; right: 0; top: 50%; height: 1.5px; transform: translateY(-50%); }
+.ranges-toggle .bars::after { top: 0; bottom: 0; left: 50%; width: 1.5px; transform: translateX(-50%); }
+.ranges-toggle[aria-expanded="true"] .bars::after { transform: translateX(-50%) scaleY(0); }
+
+.equations, .plate, .figures { transition: opacity 150ms ease-out; }
+main.stale .equations, main.stale .plate, main.stale .figures { opacity: 0.55; }
+
+h1 { font-size: 2.25rem; font-weight: 600; line-height: 1.15; margin: 0 0 0.5rem; letter-spacing: -0.01em; }
+.lede { color: var(--muted); font-size: 1.05rem; max-width: 68ch; margin: 0 0 0.25rem; }
+.status { color: var(--muted); font-size: 0.95rem; min-height: 1.5em; margin: 0 0 0.25rem; }
+.status.error { color: var(--error); }
+
+/* Equations span the text block so their numbers sit flush right with Table 1. */
+.equations { max-width: 52rem; margin: 0.5rem 0 0; }
+.equation .katex-display { margin: 0.35em 0; }
+.katex, .katex .textrm { font-family: var(--serif); }
+.katex .mathnormal { font-family: var(--serif); font-style: italic; }
+.where { color: var(--muted); font-style: italic; margin: 0.25rem 0 1.25rem; }
+
+.plate { max-width: 52rem; }
+.caption { max-width: 68ch; margin: 0 0 0.6rem; text-wrap: pretty; }
+.caption b, figcaption b, .notes b { font-weight: 600; color: var(--ink); }
+.table-scroll { overflow-x: auto; }
+table.booktabs { border-collapse: collapse; width: 100%; }
+.booktabs th, .booktabs td { padding: 0.38rem 0.9rem; text-align: right; white-space: nowrap; }
+.booktabs thead th { border-top: 1.5px solid var(--ink); border-bottom: 1px solid var(--ink); font-weight: 600; }
+.booktabs tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
+.booktabs tr.midrule td { border-top: 1px solid var(--rule); }
+.booktabs .quantity { text-align: left; }
+.booktabs .symbol { font-style: italic; color: var(--muted); padding-left: 0.35rem; }
+/* Capital Greek stays upright, as in mathematical typesetting. */
+.booktabs .symbol.upright { font-style: normal; }
+.booktabs .shared { text-align: center; }
+.booktabs .unit, .booktabs .check { color: var(--muted); text-align: left; }
+.booktabs sup { font-size: 0.7em; }
+.booktabs .unit-inline { display: none; }
+.booktabs .short { display: none; }
+/* No STIX Two Text subset has U+221E; KaTeX_Main (already loaded) supplies it. */
+.inf { font-family: KaTeX_Main, var(--serif); }
+.footnote { color: var(--muted); font-size: 0.85rem; margin: 0.4rem 0 0; }
+.footnote sup { font-size: 0.7em; }
+
+/* Figures: heatmaps drawn as grids of cells from the API's broadcast prices. */
+.figures { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; margin: 2.25rem 0 1.5rem; }
+figure { margin: 0; }
+figcaption { font-size: 0.95rem; margin-top: 0.75rem; max-width: 68ch; }
+.heatmap {
+  display: grid; grid-template-columns: 2.6rem minmax(0, 1fr) 0.7rem 2.4rem;
+  grid-template-rows: auto auto auto; column-gap: 0.4rem; row-gap: 0.25rem;
+  font-size: 0.8rem; color: var(--muted);
+}
+.heatmap .y-title { grid-column: 1 / -1; font-style: italic; color: var(--ink); }
+.heatmap .y-axis { display: grid; grid-template-rows: repeat(10, 1fr); text-align: right; }
+.heatmap .y-axis span { display: flex; align-items: center; justify-content: flex-end; }
+.heatmap .cells { position: relative; display: grid; grid-template-columns: repeat(10, 1fr); gap: 1px; background: var(--ground); }
+.heatmap .cell { aspect-ratio: 1.25; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; }
+.heatmap .marker { position: absolute; width: 1.1rem; height: 1.1rem; transform: translate(-50%, -50%); pointer-events: none; }
+.heatmap .marker::before, .heatmap .marker::after {
+  content: ""; position: absolute; background: var(--ink); box-shadow: 0 0 0 1.5px var(--ground);
+}
+.heatmap .marker::before { left: 50%; top: 0; bottom: 0; width: 1.5px; transform: translateX(-50%); }
+.heatmap .marker::after { top: 50%; left: 0; right: 0; height: 1.5px; transform: translateY(-50%); }
+.heatmap .legend { width: 0.7rem; }
+.heatmap .legend-labels { display: flex; flex-direction: column; justify-content: space-between; }
+.heatmap .x-axis { grid-column: 2; display: grid; grid-template-columns: repeat(10, 1fr); text-align: center; }
+.heatmap .x-title { grid-column: 2; text-align: center; font-style: italic; color: var(--ink); }
+
+.notes { color: var(--muted); max-width: 68ch; font-size: 0.95rem; }
+.notes p { margin: 0 0 0.45rem; }
+.credit { color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--rule); padding-top: 0.6rem; margin-top: 1.5rem; }
+
+@media (max-width: 900px) {
+  .figures { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  .page { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "margin" "main"; grid-template-rows: auto; }
+  .head { padding: 1.5rem 1rem 0.75rem; }
+  .margin { border-right: none; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 1rem; }
+  .margin form { position: static; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; align-items: end; }
+  .margin label { font-size: 0.85rem; }
+  .margin form > h2, .ranges-head, .ranges { grid-column: 1 / -1; }
+  .margin h2 { font-size: 1.05rem; }
+  .ranges-head { margin-top: 0.2rem; }
+  .ranges-toggle {
+    display: grid; place-items: center; width: 2.75rem; height: 2.75rem; padding: 0;
+    background: none; border: 1px solid var(--field-border); border-radius: 0; cursor: pointer;
+  }
+  .ranges-toggle:hover { border-color: var(--muted); }
+  .ranges[hidden] { display: none; }
+  main { padding: 1.25rem 1rem 2rem; }
+  h1 { font-size: 1.85rem; }
+  .equation .katex-display > .katex { font-size: 1em; }
+  .booktabs th, .booktabs td { padding: 0.3rem 0.35rem; }
+  .booktabs .check { padding-left: 0.9rem; }
+  .booktabs .unit { display: none; }
+  .booktabs .unit-inline { display: block; color: var(--muted); font-size: 0.8rem; }
+  .booktabs .long { display: none; }
+  .booktabs .short { display: inline; }
+  .heatmap .cell { font-size: 0.7rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .equations, .plate, .figures, .margin input, .ranges-toggle .bars::after { transition: none; }
+}
