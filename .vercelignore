@@ -1,0 +1,7 @@
+# Static stlite demo: upload only the page and the files it loads.
+/*
+!index.html
+!streamlit_app.py
+!BlackScholes.py
+!.streamlit
+!vercel.json

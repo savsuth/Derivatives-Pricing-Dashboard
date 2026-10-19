@@ -6,6 +6,7 @@
 An interactive **Black–Scholes option pricing dashboard** built with **Streamlit**, enabling users to explore how option prices behave under different market conditions.
 An interactive **Black–Scholes option pricing dashboard** built with **Streamlit**, enabling users to explore how option prices behave under different market conditions.  
 
+**Live demo:** [derivatives-pricing-dashboard.vercel.app](https://derivatives-pricing-dashboard.vercel.app). It runs the same `streamlit_app.py` in your browser through [stlite](https://github.com/whitphx/stlite), so the first load downloads Python and takes about 20 seconds.
 
 ---
 

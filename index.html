@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Derivatives Pricing Dashboard</title>
+    <meta name="description" content="Black-Scholes option prices, Greeks and heatmaps, running Streamlit in the browser via stlite." />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@stlite/browser@1.9.2/build/stlite.css" />
+    <style>
+      html, body { margin: 0; background: #0e1117; color: #fafafa; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>This dashboard runs Python in your browser and needs JavaScript enabled.</noscript>
+    <script type="module">
+      // The same streamlit_app.py and BlackScholes.py from the repository run here
+      // under Pyodide, so the hosted demo uses the tested pricing code as-is.
+      import { mount } from "https://cdn.jsdelivr.net/npm/@stlite/browser@1.9.2/build/stlite.js";
+
+      mount(
+        {
+          entrypoint: "streamlit_app.py",
+          requirements: ["numpy", "scipy", "pandas", "matplotlib", "seaborn"],
+          files: {
+            "streamlit_app.py": { url: "./streamlit_app.py" },
+            "BlackScholes.py": { url: "./BlackScholes.py" },
+            ".streamlit/config.toml": { url: "./.streamlit/config.toml" },
+          },
+          streamlitConfig: { "client.toolbarMode": "viewer" },
+        },
+        document.getElementById("root"),
+      );
+    </script>
+  </body>
+</html>
