@@ -34,10 +34,10 @@ For S = 100, K = 100, T = 1, σ = 0.2 and r = 0.05, the page shows:
 | Quantity | Call | Put | Unit | Difference |
 | --- | ---: | ---: | --- | --- |
 | Price | 10.4506 | 5.5735 | per share | 0 (put–call parity) |
-| Delta | 0.6368 | −0.3632 | per 1.00 of spot | 8.6×10⁻⁷ |
+| Delta | 0.6368 | −0.3632 | per 1.00 change in spot | 8.6×10⁻⁷ |
 | Theta | −0.0176 | −0.0045 | per calendar day | 1.3×10⁻¹¹ |
-| Rho | 0.5323 | −0.4189 | per 1% of rate | 9.4×10⁻¹¹ |
-| Gamma | 0.01876 | same | per 1.00 of spot | 2.3×10⁻⁸ |
+| Rho | 0.5323 | −0.4189 | per percentage point of rate | 9.4×10⁻¹¹ |
+| Gamma | 0.01876 | same | per 1.00 change in spot | 2.3×10⁻⁸ |
 | Vega | 0.3752 | same | per volatility point | 3.0×10⁻⁹ |
 | Vanna | −0.00281 | same | delta per volatility point | 1.1×10⁻⁹ |
 | Volga | 0.000985 | same | vega per volatility point | 5.6×10⁻¹⁰ |

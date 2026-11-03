@@ -10,12 +10,12 @@ const CELL_LIGHT = [255, 255, 255], CELL_DARK = [0, 0, 0];
 
 const PAIRED = [
   ["Price", "c, p", "price", 4, "per share"],
-  ["Delta", "Δ", "delta", 4, "per 1.00 of S"],
+  ["Delta", "Δ", "delta", 4, "per 1.00 change in S"],
   ["Theta", "Θ", "theta", 4, "per calendar day"],
-  ["Rho", "ρ", "rho", 4, "per 1% of r"],
+  ["Rho", "ρ", "rho", 4, "per percentage point of r"],
 ];
 const SHARED = [
-  ["Gamma", "Γ", "gamma", 5, "per 1.00 of S"],
+  ["Gamma", "Γ", "gamma", 5, "per 1.00 change in S"],
   ["Vega", "ν", "vega", 4, "per vol point"],
   ["Vanna", "", "vanna", 5, "Δ per vol point"],
   ["Volga", "", "volga", 6, "ν per vol point"],
@@ -80,7 +80,7 @@ function renderEquations(quote) {
     d.hidden = false;
   }
   const lead = quote.degenerate
-    ? "With σ√T = 0 the payoff is certain, so each option is worth its discounted intrinsic value and Table 1 reports each Greek's limit. Here"
+    ? "With σ√T = 0, the payoff is certain, so each option is worth its discounted intrinsic value and Table 1 reports each Greek's limit. Here,"
     : "where";
   document.getElementById("where").textContent = minus(
     `${lead} S = ${S.toFixed(2)}, K = ${K.toFixed(2)}, T = ${T.toFixed(2)}, σ = ${sigma.toFixed(2)} and r = ${r.toFixed(2)}.`);
@@ -168,7 +168,7 @@ async function update() {
     params.set(input.name, input.value);
   }
   if (missing) {
-    statusLine.textContent = `Enter a number for ${missing}.`;
+    statusLine.textContent = `Enter a number for ${missing[0].toLowerCase()}${missing.slice(1)}.`;
     statusLine.classList.add("error");
     return;
   }

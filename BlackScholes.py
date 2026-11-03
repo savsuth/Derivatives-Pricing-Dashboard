@@ -51,7 +51,7 @@ class BlackScholes:
             raise ValueError("inputs must be finite")
         if np.any(T < 0) or np.any(sigma < 0) or np.any(S <= 0) or np.any(K <= 0):
             raise ValueError(
-                "require time_to_maturity >= 0, volatility >= 0, strike > 0, current_price > 0"
+                "time_to_maturity and volatility must be >= 0, and strike and current_price must be > 0"
             )
 
         discounted_strike = K * exp(-r * T)

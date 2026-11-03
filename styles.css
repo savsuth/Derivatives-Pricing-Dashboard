@@ -120,6 +120,7 @@ table.booktabs { border-collapse: collapse; width: 100%; }
 .booktabs .shared { text-align: center; }
 .booktabs .unit, .booktabs .check { color: var(--muted); text-align: left; }
 .booktabs sup { font-size: 0.7em; }
+.booktabs .unit, .booktabs .unit-inline { white-space: normal; }
 .booktabs .unit-inline { display: none; }
 .booktabs .short { display: none; }
 /* No STIX Two Text subset has U+221E; KaTeX_Main (already loaded) supplies it. */
