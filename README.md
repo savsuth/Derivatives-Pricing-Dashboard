@@ -133,14 +133,6 @@ curl "https://derivatives-pricing-dashboard.vercel.app/api/quote?S=100&K=100&T=1
 
 `S`, `K`, `T`, `sigma` and `r` are required. The optional `spot_min`, `spot_max`, `vol_min` and `vol_max` set the heatmap ranges. The JSON response has the keys `inputs`, `degenerate`, `prices`, `greeks`, `checks` and `heatmap`. An infinite Greek is returned as the string `"inf"` or `"-inf"`, and a check is `null` when no bump can be made.
 
-## Limitations
-
-- It prices European options on assets that pay no dividends.
-- Volatility and the interest rate are constant, as the Black–Scholes model assumes.
-- You enter all inputs by hand. The project does not use market data.
-- The first request after an idle period can take a few seconds while the function starts.
-- It is for education and is not investment advice.
-
 ## License
 
 [MIT](LICENSE), by [Aasav Suthar](https://github.com/savsuth).
