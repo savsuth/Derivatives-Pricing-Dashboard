@@ -30,7 +30,9 @@ function number(value, decimals) {
   if (value === "inf") return '<span class="inf">∞</span>';
   if (value === "-inf") return '−<span class="inf">∞</span>';
   if (value === undefined || value === null) return "—";
-  return minus(value.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals }));
+  const text = value.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  // A value that rounds to zero shows no sign.
+  return minus(/[1-9]/.test(text) ? text : text.replace("-", ""));
 }
 
 function difference(value) {
