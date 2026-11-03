@@ -1,7 +1,7 @@
 <h1 align="center">Derivatives Pricing Dashboard</h1>
 
 <p align="center">
-  A Black–Scholes option pricer that checks its own Greeks while you watch.
+  Options pricing you can verify.
 </p>
 
 <p align="center">
