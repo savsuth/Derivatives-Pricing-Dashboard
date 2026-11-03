@@ -120,7 +120,7 @@ Start the page at <http://localhost:3000>:
 python3 dev_server.py
 ```
 
-Run the 59 tests:
+Run the 61 tests:
 
 ```bash
 python3 -m unittest discover -s tests

@@ -20,6 +20,11 @@ class Router(SimpleHTTPRequestHandler):
             return quote.handler.do_GET(self)
         return super().do_GET()
 
+    def do_HEAD(self):
+        if self.path.startswith("/api/quote"):
+            return quote.handler.do_HEAD(self)
+        return super().do_HEAD()
+
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 3000

@@ -48,7 +48,7 @@ Verified numerics. Every price and Greek is cross-checked against QuantLib, comp
 
 ## Evidence on Hand
 
-- Test suite in `tests/`: 59 unittest tests (including the API function and its HTTP handler), including a QuantLib 1.44 oracle on 2,000 random inputs and hypothesis no-arbitrage properties.
+- Test suite in `tests/`: 61 unittest tests (including the API function and its HTTP handler), including a QuantLib 1.44 oracle on 2,000 random inputs and hypothesis no-arbitrage properties.
 - A documented finding: QuantLib 1.44 `BlackCalculator::volga` is low by a factor of 1/sqrt(T).
 - Measured heatmap speedup from broadcasting: 37x at 10x10 and 513x at 100x100, compared with the original loop.
 - Live demo: https://derivatives-pricing-dashboard.vercel.app

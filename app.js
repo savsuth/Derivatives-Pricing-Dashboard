@@ -26,10 +26,21 @@ const RAMP = [[15, 21, 32], [28, 53, 97], [61, 107, 192], [159, 192, 245], [232,
 
 const minus = (text) => text.replace(/-/g, "−");
 
+// From here on a value prints as a mantissa and exponent, not as hundreds of digits.
+const HUGE = 1e9;
+// Heatmap cells and axis labels hold about five characters, so they switch much sooner.
+const CELL_HUGE = 1e4;
+const short = (value, digits) => value.toExponential(digits).replace("e+", "e");
+const fixed = (value, decimals) => (Math.abs(value) >= HUGE ? short(value, 2) : value.toFixed(decimals));
+
 function number(value, decimals) {
   if (value === "inf") return '<span class="inf">∞</span>';
   if (value === "-inf") return '−<span class="inf">∞</span>';
   if (value === undefined || value === null) return "—";
+  if (Math.abs(value) >= HUGE) {
+    const [mantissa, exponent] = value.toExponential(2).split("e");
+    return minus(`${mantissa}×10<sup>${Number(exponent)}</sup>`);
+  }
   const text = value.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   // A value that rounds to zero shows no sign.
   return minus(/[1-9]/.test(text) ? text : text.replace("-", ""));
@@ -68,7 +79,12 @@ function renderTable(quote) {
 function renderEquations(quote) {
   if (!window.katex) return;
   const { S, K, T, sigma, r } = quote.inputs;
-  const c = quote.prices.call.toFixed(4), p = quote.prices.put.toFixed(4);
+  const price = (value) => {
+    if (Math.abs(value) < HUGE) return value.toFixed(4);
+    const [mantissa, exponent] = value.toExponential(2).split("e");
+    return String.raw`${mantissa} \times 10^{${Number(exponent)}}`;
+  };
+  const c = price(quote.prices.call), p = price(quote.prices.put);
   const show = (id, tex) => katex.render(tex, document.getElementById(id), { displayMode: true, throwOnError: false });
   const d = document.getElementById("eq-d");
   if (quote.degenerate) {
@@ -85,7 +101,7 @@ function renderEquations(quote) {
     ? "With σ√T = 0, the payoff is certain, so each option is worth its discounted intrinsic value and Table 1 reports each Greek's limit. Here,"
     : "where";
   document.getElementById("where").textContent = minus(
-    `${lead} S = ${S.toFixed(2)}, K = ${K.toFixed(2)}, T = ${T.toFixed(2)}, σ = ${sigma.toFixed(2)} and r = ${r.toFixed(2)}.`);
+    `${lead} S = ${fixed(S, 2)}, K = ${fixed(K, 2)}, T = ${fixed(T, 2)}, σ = ${fixed(sigma, 2)} and r = ${fixed(r, 2)}.`);
 }
 
 function rampColor(t) {
@@ -118,12 +134,19 @@ function renderHeatmap(id, grid, values, quote) {
   const flat = values.flat(), low = Math.min(...flat), high = Math.max(...flat);
   const n = grid.spots.length;
   const decimals = phone.matches ? 1 : 2;  // narrow cells get one decimal
+  const cellText = (value) => {
+    const size = Math.abs(value);
+    if (size >= CELL_HUGE) return short(value, decimals - 1);
+    return value.toFixed(size >= 1000 ? 0 : decimals);
+  };
+  const axisText = (value) => (Math.abs(value) >= CELL_HUGE ? short(value, decimals - 1) : value.toFixed(0));
+  const legendText = (value) => (Math.abs(value) >= CELL_HUGE ? short(value, 1) : value.toFixed(1));
   let cells = "";
   for (let row = n - 1; row >= 0; row--) {  // volatility increases upward
     for (let col = 0; col < n; col++) {
       const value = values[row][col];
       const fill = rampColor(high > low ? (value - low) / (high - low) : 0);
-      cells += `<div class="cell" style="background:rgb(${fill.join(",")});color:rgb(${textOn(fill).join(",")})">${value.toFixed(decimals)}</div>`;
+      cells += `<div class="cell" style="background:rgb(${fill.join(",")});color:rgb(${textOn(fill).join(",")})">${cellText(value)}</div>`;
     }
   }
   const { S, sigma } = quote.inputs;
@@ -132,14 +155,14 @@ function renderHeatmap(id, grid, values, quote) {
     marker = `<span class="marker" style="left:${position(S, grid.spots)}%;top:${100 - position(sigma, grid.vols)}%"></span>`;
   }
   const yLabels = grid.vols.slice().reverse().map((v) => `<span>${v.toFixed(2)}</span>`).join("");
-  const xLabels = grid.spots.map((s) => `<span>${s.toFixed(0)}</span>`).join("");
+  const xLabels = grid.spots.map((s) => `<span>${axisText(s)}</span>`).join("");
   const stops = RAMP.slice().reverse().map((c) => `rgb(${c.join(",")})`).join(",");
   document.getElementById(id).innerHTML =
     `<span class="y-title">σ</span>` +
     `<div class="y-axis">${yLabels}</div>` +
     `<div class="cells">${cells}${marker}</div>` +
     `<div class="legend" style="background:linear-gradient(${stops})"></div>` +
-    `<div class="legend-labels"><span>${high.toFixed(1)}</span><span>${low.toFixed(1)}</span></div>` +
+    `<div class="legend-labels"><span>${legendText(high)}</span><span>${legendText(low)}</span></div>` +
     `<div class="x-axis">${xLabels}</div><span class="x-title">Spot S</span>`;
 }
 
@@ -150,7 +173,7 @@ function render(quote) {
   renderHeatmap("heat-put", quote.heatmap, quote.heatmap.put, quote);
   const { K, T, r } = quote.inputs;
   document.querySelectorAll(".conditions").forEach((el) => {
-    el.textContent = minus(`K = ${K.toFixed(2)}, T = ${T.toFixed(2)} and r = ${r.toFixed(2)}`);
+    el.textContent = minus(`K = ${fixed(K, 2)}, T = ${fixed(T, 2)} and r = ${fixed(r, 2)}`);
   });
   const infinite = Object.values(quote.greeks).some((v) => typeof v === "string");
   document.getElementById("limits-note").hidden = !(quote.degenerate || infinite);

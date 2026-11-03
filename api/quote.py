@@ -53,7 +53,9 @@ def build_quote(params):
         model.run()
         return model
 
-    model = priced()  # raises ValueError for invalid model inputs
+    if T < 0 or sigma < 0 or S <= 0 or K <= 0:
+        raise ValueError("T and sigma must be >= 0, and S and K must be > 0")
+    model = priced()
     if not 0 < spot_min < spot_max:
         raise ValueError("heatmap spots need 0 < spot_min < spot_max")
     if not 0 < vol_min < vol_max:
@@ -111,20 +113,28 @@ def build_quote(params):
     }
 
 
+def _respond(request, send_body):
+    params = {k: v[0] for k, v in parse_qs(urlparse(request.path).query).items()}
+    try:
+        status, body = 200, build_quote(params)
+    except ValueError as error:
+        status, body = 400, {"error": str(error)}
+    payload = json.dumps(body, allow_nan=False).encode("utf-8")
+    request.send_response(status)
+    request.send_header("Content-Type", "application/json")
+    request.send_header("Cache-Control", "no-store")
+    request.send_header("Content-Length", str(len(payload)))
+    request.end_headers()
+    if send_body:
+        request.wfile.write(payload)
+
+
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        params = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
-        try:
-            status, body = 200, build_quote(params)
-        except ValueError as error:
-            status, body = 400, {"error": str(error)}
-        payload = json.dumps(body, allow_nan=False).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("Content-Length", str(len(payload)))
-        self.end_headers()
-        self.wfile.write(payload)
+        _respond(self, send_body=True)
+
+    def do_HEAD(self):
+        _respond(self, send_body=False)
 
     def log_message(self, format, *args):
         pass  # keep test and function logs quiet

@@ -109,9 +109,10 @@ class BuildQuote(unittest.TestCase):
         self.assertEqual(q["greeks"]["gamma"], "inf")
         json.loads(json.dumps(q, allow_nan=False))
 
-    def test_invalid_spot_names_the_model_input(self):
-        with self.assertRaisesRegex(ValueError, "current_price"):
-            quote.build_quote({**DEFAULT, "S": "-1"})
+    def test_invalid_inputs_name_the_api_parameters(self):
+        for bad in ("S", "K", "T", "sigma"):
+            with self.subTest(bad=bad), self.assertRaisesRegex(ValueError, r"^T and sigma must be >= 0, and S and K must be > 0$"):
+                quote.build_quote({**DEFAULT, bad: "-1"})
 
     def test_heatmap_grid(self):
         q = quote.build_quote({**DEFAULT, "spot_min": "60", "spot_max": "140", "vol_min": "0.05", "vol_max": "0.6"})
@@ -159,6 +160,23 @@ class Handler(unittest.TestCase):
             urllib.request.urlopen(f"{self.base}?S=-5&K=100&T=1&sigma=0.2&r=0.05")
         self.assertEqual(caught.exception.code, 400)
         self.assertIn("error", json.load(caught.exception))
+
+    def test_head_matches_get_without_a_body(self):
+        url = f"{self.base}?S=100&K=100&T=1&sigma=0.2&r=0.05"
+        with urllib.request.urlopen(url) as response:
+            length = response.headers["Content-Length"]
+        request = urllib.request.Request(url, method="HEAD")
+        with urllib.request.urlopen(request) as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response.headers["Content-Type"], "application/json")
+            self.assertEqual(response.headers["Content-Length"], length)
+            self.assertEqual(response.read(), b"")
+
+    def test_head_reports_bad_requests(self):
+        request = urllib.request.Request(f"{self.base}?S=-5&K=100&T=1&sigma=0.2&r=0.05", method="HEAD")
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            urllib.request.urlopen(request)
+        self.assertEqual(caught.exception.code, 400)
 
     def test_extreme_inputs_are_not_server_errors(self):
         for query in ("S=1e308&K=100&T=1&sigma=0.2&r=0.05", "S=1e-308&K=100&T=1&sigma=0.2&r=0.05",
