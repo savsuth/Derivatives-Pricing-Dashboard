@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from BlackScholes import BlackScholes
 
 GRID_SIZE = 10
+MIN_BUMPED_VOL_SQRT_T = 1e-5
 
 
 def _number(params, name, default=None):
@@ -57,31 +58,40 @@ def build_quote(params):
         raise ValueError("heatmap spots need 0 < spot_min < spot_max")
     if not 0 < vol_min < vol_max:
         raise ValueError("heatmap volatilities need 0 < vol_min < vol_max")
-    degenerate = sigma * math.sqrt(T) == 0
+    if not math.isfinite(model.put_price):
+        raise ValueError("the discounted strike K * exp(-r * T) is too large to represent")
+    vol_sqrt_t = sigma * math.sqrt(T)
+    degenerate = vol_sqrt_t == 0
 
     # Live check: reprice with small input bumps and compare with the closed-form Greeks.
+    # Each bump stays small against the scale the price varies on, sigma * sqrt(T) near expiry.
+    # Below MIN_BUMPED_VOL_SQRT_T, floating-point noise swamps any such bump, so none is made.
     checks = dict.fromkeys(("delta", "theta", "rho", "gamma", "vega", "vanna", "volga", "charm"))
     checks["price"] = abs(model.call_price - model.put_price - (S - K * math.exp(-r * T)))
-    if not degenerate:
-        h = 1e-3 * S
-        up, down = priced(current_price=S + h), priced(current_price=S - h)
-        checks["delta"] = max(abs(model.call_delta - (up.call_price - down.call_price) / (2 * h)),
-                              abs(model.put_delta - (up.put_price - down.put_price) / (2 * h)))
-        checks["gamma"] = abs(model.gamma - (up.call_price - 2 * model.call_price + down.call_price) / h ** 2)
-        h = min(1e-4, sigma / 2)
-        up, down = priced(volatility=sigma + h), priced(volatility=sigma - h)
-        checks["vega"] = abs(model.vega - (up.call_price - down.call_price) / (2 * h) / 100)
-        checks["vanna"] = abs(model.vanna - (up.call_delta - down.call_delta) / (2 * h) / 100)
-        checks["volga"] = abs(model.volga - (up.vega - down.vega) / (2 * h) / 100)
-        h = min(1e-4, T / 2)
-        up, down = priced(time_to_maturity=T + h), priced(time_to_maturity=T - h)
-        checks["theta"] = max(abs(model.call_theta + (up.call_price - down.call_price) / (2 * h) / 365),
-                              abs(model.put_theta + (up.put_price - down.put_price) / (2 * h) / 365))
-        checks["charm"] = abs(model.charm + (up.call_delta - down.call_delta) / (2 * h) / 365)
-        h = 1e-5
-        up, down = priced(interest_rate=r + h), priced(interest_rate=r - h)
-        checks["rho"] = max(abs(model.call_rho - (up.call_price - down.call_price) / (2 * h) / 100),
-                            abs(model.put_rho - (up.put_price - down.put_price) / (2 * h) / 100))
+    if vol_sqrt_t >= MIN_BUMPED_VOL_SQRT_T:
+        try:
+            h = S * min(1e-3, 1e-2 * vol_sqrt_t)
+            up, down = priced(current_price=S + h), priced(current_price=S - h)
+            checks["delta"] = max(abs(model.call_delta - (up.call_price - down.call_price) / (2 * h)),
+                                  abs(model.put_delta - (up.put_price - down.put_price) / (2 * h)))
+            checks["gamma"] = abs(model.gamma - (up.call_price - 2 * model.call_price + down.call_price) / h ** 2)
+            h = min(1e-4, 1e-2 * sigma)
+            up, down = priced(volatility=sigma + h), priced(volatility=sigma - h)
+            checks["vega"] = abs(model.vega - (up.call_price - down.call_price) / (2 * h) / 100)
+            checks["vanna"] = abs(model.vanna - (up.call_delta - down.call_delta) / (2 * h) / 100)
+            checks["volga"] = abs(model.volga - (up.vega - down.vega) / (2 * h) / 100)
+            h = min(1e-4, 1e-2 * T)
+            up, down = priced(time_to_maturity=T + h), priced(time_to_maturity=T - h)
+            checks["theta"] = max(abs(model.call_theta + (up.call_price - down.call_price) / (2 * h) / 365),
+                                  abs(model.put_theta + (up.put_price - down.put_price) / (2 * h) / 365))
+            checks["charm"] = abs(model.charm + (up.call_delta - down.call_delta) / (2 * h) / 365)
+            h = min(1e-5, 1e-2 * vol_sqrt_t / T)
+            up, down = priced(interest_rate=r + h), priced(interest_rate=r - h)
+            checks["rho"] = max(abs(model.call_rho - (up.call_price - down.call_price) / (2 * h) / 100),
+                                abs(model.put_rho - (up.put_price - down.put_price) / (2 * h) / 100))
+        except ArithmeticError:
+            pass  # a bump leaves float range: the checks not yet made stay null
+    checks = {name: value if value is not None and math.isfinite(value) else None for name, value in checks.items()}
 
     # One broadcast call: rows are volatilities, columns are spots.
     spots = np.linspace(spot_min, spot_max, GRID_SIZE)

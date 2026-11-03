@@ -54,7 +54,14 @@ class BlackScholes:
                 "time_to_maturity and volatility must be >= 0, and strike and current_price must be > 0"
             )
 
-        discounted_strike = K * exp(-r * T)
+        with np.errstate(over="ignore"):
+            discounted_strike = K * exp(-r * T)
+
+        def discounted(probability):
+            # Above float range the discounted strike is inf, but a probability of exactly 0
+            # still cancels it: that term's limit is 0, not inf * 0 = NaN.
+            with np.errstate(invalid="ignore"):
+                return np.where(probability == 0, 0.0, discounted_strike * probability)
 
         # Regular Black-Scholes wherever T * sigma * sqrt(T) (the smallest denominator, in
         # charm) is representable and d1 is finite; other cells are numerically the
@@ -71,22 +78,29 @@ class BlackScholes:
         # Overflow is expected near the sigma -> 0 limit: d1 ** 2 overflows where the
         # density is 0 anyway, and Greeks that exceed float range become +/-inf,
         # matching the degenerate-case convention.
-        with np.errstate(over="ignore"):
+        with np.errstate(divide="ignore", over="ignore", invalid="ignore"):
             pdf_d1 = norm.pdf(d1)
+            decay_per_spot = -pdf_d1 * sigma / (2.0 * sqrt(safe_t))
             decay = -S * pdf_d1 * sigma / (2.0 * sqrt(safe_t))
+
+            def theta(sign, probability):
+                # Both terms above float range with opposite signs: compare them per unit of spot.
+                total = decay + sign * r * discounted(probability)
+                return np.where(np.isnan(total), S * (decay_per_spot + sign * r * (discounted(probability) / S)), total)
+
             reg = dict(
-                call_price=S * norm.cdf(d1) - discounted_strike * norm.cdf(d2),
-                put_price=discounted_strike * norm.cdf(-d2) - S * norm.cdf(-d1),
+                call_price=S * norm.cdf(d1) - discounted(norm.cdf(d2)),
+                put_price=discounted(norm.cdf(-d2)) - S * norm.cdf(-d1),
                 call_delta=norm.cdf(d1),
-                gamma=pdf_d1 / (S * vol_sqrt_t),
+                gamma=pdf_d1 / S / vol_sqrt_t,
                 vega=S * pdf_d1 * sqrt(T),
-                call_theta=decay - r * discounted_strike * norm.cdf(d2),
-                put_theta=decay + r * discounted_strike * norm.cdf(-d2),
-                call_rho=T * discounted_strike * norm.cdf(d2),
-                put_rho=-T * discounted_strike * norm.cdf(-d2),
+                call_theta=theta(-1.0, norm.cdf(d2)),
+                put_theta=theta(1.0, norm.cdf(-d2)),
+                call_rho=T * discounted(norm.cdf(d2)),
+                put_rho=-T * discounted(norm.cdf(-d2)),
                 vanna=-pdf_d1 * d2 / safe_sigma,
-                volga=S * pdf_d1 * sqrt(T) * d1 * d2 / safe_sigma,
-                charm=-pdf_d1 * (2.0 * r * T - d2 * vol_sqrt_t) / (2.0 * safe_t * vol_sqrt_t),
+                volga=S * (pdf_d1 * sqrt(T) * d1 * d2 / safe_sigma),
+                charm=-pdf_d1 * (2.0 * (r * T) - d2 * vol_sqrt_t) / (2.0 * safe_t * vol_sqrt_t),
             )
 
         # Deterministic payoff: sign of S against the discounted strike, kink at equality.
@@ -98,20 +112,21 @@ class BlackScholes:
         drift = r + 0.5 * sigma ** 2
         expiry_kink = kink & (T == 0) & (sigma > 0)  # time value ~ sigma * sqrt(T) decays infinitely fast
         kink_charm = np.where(drift > 0, -np.inf, np.where(drift < 0, np.inf, 0.0))
-        deg = dict(
-            call_price=np.maximum(moneyness, 0.0),
-            put_price=np.maximum(-moneyness, 0.0),
-            call_delta=deg_call_delta,
-            gamma=np.where(kink, np.inf, 0.0),
-            vega=np.where(kink, S * sqrt(T) * INV_SQRT_2PI, 0.0),
-            call_theta=np.where(expiry_kink, -np.inf, -r * discounted_strike * deg_call_delta),
-            put_theta=np.where(expiry_kink, -np.inf, -r * discounted_strike * deg_put_delta),
-            call_rho=T * discounted_strike * deg_call_delta,
-            put_rho=T * discounted_strike * deg_put_delta,
-            vanna=np.where(kink, sqrt(T) * INV_SQRT_2PI / 2.0, 0.0),
-            volga=np.zeros_like(S),
-            charm=np.where(kink, kink_charm, 0.0),
-        )
+        with np.errstate(over="ignore"):
+            deg = dict(
+                call_price=np.maximum(moneyness, 0.0),
+                put_price=np.maximum(-moneyness, 0.0),
+                call_delta=deg_call_delta,
+                gamma=np.where(kink, np.inf, 0.0),
+                vega=np.where(kink, S * sqrt(T) * INV_SQRT_2PI, 0.0),
+                call_theta=np.where(expiry_kink, -np.inf, -r * discounted(deg_call_delta)),
+                put_theta=np.where(expiry_kink, -np.inf, -r * discounted(deg_put_delta)),
+                call_rho=T * discounted(deg_call_delta),
+                put_rho=T * discounted(deg_put_delta),
+                vanna=np.where(kink, sqrt(T) * INV_SQRT_2PI / 2.0, 0.0),
+                volga=np.zeros_like(S),
+                charm=np.where(kink, kink_charm, 0.0),
+            )
 
         out = {k: np.where(regular, reg[k], deg[k]) for k in reg}
         out["put_delta"] = out["call_delta"] - 1.0

@@ -47,7 +47,7 @@ The last column compares two methods. One is the closed-form formula. The other 
 
 ### The results match QuantLib
 
-The test suite compares prices and Greeks with [QuantLib](https://www.quantlib.org/) 1.44 on 2,000 random inputs. In a run of that comparison, the largest relative difference was 8.3×10⁻¹³, and the tests fail above 10⁻⁹. Charm is not available from QuantLib's calculator, so it is checked with complex-step derivatives instead.
+The test suite compares prices and Greeks with [QuantLib](https://www.quantlib.org/) 1.44 on 2,000 random inputs. In a run of that comparison, the largest absolute difference was 6.3×10⁻¹² in QuantLib's units. Scaled by max(1, |value|), the largest difference was 8.3×10⁻¹³, and the tests fail if it reaches 10⁻⁹. Charm is not available from QuantLib's calculator, so it is checked with complex-step derivatives instead.
 
 The comparison also found a difference in QuantLib's volga. Version 1.44 divides by `stdDev` (σ√T) where the formula needs σ, so its value is too small by a factor of √T. At S = K = 100, T = 4, σ = 0.2 and r = 0.05:
 
@@ -70,6 +70,7 @@ Each row is a request to the live API, with K = 100 and T = 1 unless the row say
 | S = 110, T = 0, σ = 0.2, r = 0.05 | 10 | 0 | 1 | 0 | At expiry, the option is worth its intrinsic value |
 | S = 95.1229424500714, σ = 0, r = 0.05 | 0 | 0 | 0.5 | ∞ | Spot is at the discounted strike, the kink in the payoff |
 | S = −1, σ = 0.2, r = 0.05 | | | | | Status 400 with a message naming the valid ranges |
+| S = 100, σ = 0.2, r = −1000 | | | | | Status 400, because Ke⁻ʳᵀ is too large to represent |
 
 With σ = 0, the page changes its equations and marks the Greeks as limits instead of showing bump checks:
 
@@ -119,7 +120,7 @@ Start the page at <http://localhost:3000>:
 python3 dev_server.py
 ```
 
-Run the 50 tests:
+Run the 59 tests:
 
 ```bash
 python3 -m unittest discover -s tests
@@ -131,7 +132,7 @@ python3 -m unittest discover -s tests
 curl "https://derivatives-pricing-dashboard.vercel.app/api/quote?S=100&K=100&T=1&sigma=0.2&r=0.05"
 ```
 
-`S`, `K`, `T`, `sigma` and `r` are required. The optional `spot_min`, `spot_max`, `vol_min` and `vol_max` set the heatmap ranges. The JSON response has the keys `inputs`, `degenerate`, `prices`, `greeks`, `checks` and `heatmap`. An infinite Greek is returned as the string `"inf"` or `"-inf"`, and a check is `null` when no bump can be made.
+`S`, `K`, `T`, `sigma` and `r` are required. The optional `spot_min`, `spot_max`, `vol_min` and `vol_max` set the heatmap ranges. The JSON response has the keys `inputs`, `degenerate`, `prices`, `greeks`, `checks` and `heatmap`. An infinite Greek is returned as the string `"inf"` or `"-inf"`, and a check is `null` when no reliable bump can be made.
 
 ## License
 

@@ -35,8 +35,8 @@ function number(value, decimals) {
   return minus(/[1-9]/.test(text) ? text : text.replace("-", ""));
 }
 
-function difference(value) {
-  if (value === null) return "limit, not bumped";
+function difference(value, degenerate) {
+  if (value === null) return degenerate ? "limit, not bumped" : "not bumped";
   if (value === 0) return "0";
   const [mantissa, exponent] = value.toExponential(1).split("e");
   return minus(`${mantissa}×10<sup>${Number(exponent)}</sup>`);
@@ -55,12 +55,12 @@ function renderTable(quote) {
     const put = quote ? (key === "price" ? quote.prices.put : quote.greeks[`put_${key}`]) : null;
     const dagger = key === "price" ? " †" : "";  // the price row is a parity residual, not a bump
     return row(name, symbol, unit, `<td>${number(call, decimals)}</td><td>${number(put, decimals)}</td>`,
-      quote ? difference(quote.checks[key]) + dagger : "—");
+      quote ? difference(quote.checks[key], quote.degenerate) + dagger : "—");
   });
   SHARED.forEach(([name, symbol, key, decimals, unit], i) => {
     const value = quote ? quote.greeks[key] : null;
     rows.push(row(name, symbol, unit, `<td class="shared" colspan="2">${number(value, decimals)}</td>`,
-      quote ? difference(quote.checks[key]) : "—", i === 0 ? ' class="midrule"' : ""));
+      quote ? difference(quote.checks[key], quote.degenerate) : "—", i === 0 ? ' class="midrule"' : ""));
   });
   document.getElementById("greeks").innerHTML = rows.join("");
 }

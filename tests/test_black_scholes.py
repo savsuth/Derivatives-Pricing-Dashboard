@@ -313,6 +313,38 @@ class Underflow(unittest.TestCase):
                     self.assertEqual(getattr(tiny, f), getattr(zero, f), f)
 
 
+class DiscountedStrikeOverflow(unittest.TestCase):
+    """K * exp(-rT) above float range: the call tends to 0 and the put exceeds float range."""
+
+    FIELDS = ("call_price", "put_price", "call_delta", "put_delta", "gamma", "vega", "call_theta",
+              "put_theta", "call_rho", "put_rho", "vanna", "volga", "charm")
+
+    def test_call_is_zero_and_put_is_infinite(self):
+        cases = (dict(T=1.0, K=100.0, S=100.0, sigma=0.2, r=-1000.0),
+                 dict(T=1500.0, K=100.0, S=100.0, sigma=0.2, r=-0.5),
+                 dict(T=1.0, K=1e308, S=100.0, sigma=0.2, r=-1.0),
+                 dict(T=1.0, K=100.0, S=100.0, sigma=0.0, r=-1000.0))
+        for c in cases:
+            with self.subTest(**c), warnings.catch_warnings():
+                warnings.simplefilter("error")
+                bs = priced(**c)
+                self.assertEqual((bs.call_price, bs.put_price), (0.0, math.inf))
+                self.assertEqual((bs.call_delta, bs.put_delta, bs.call_rho), (0.0, -1.0, 0.0))
+                self.assertEqual(bs.call_theta, 0.0)
+
+    def test_no_nan_across_extreme_inputs(self):
+        T, K, S, sigma, r = np.meshgrid([0.0, 1e-300, 1e-8, 1.0, 1e4, 1e308], [1e-308, 1.0, 1e308],
+                                        [1e-308, 1.0, 1e308], [0.0, 1e-300, 0.2, 1e308],
+                                        [-1e308, -1000.0, -0.05, 0.0, 0.05, 1000.0, 1e308])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")  # overflow in the inputs themselves is not under test
+            bs = BlackScholes(T, K, S, sigma, r)
+            bs.run()
+        for f in self.FIELDS:
+            with self.subTest(f=f):
+                self.assertFalse(np.isnan(getattr(bs, f)).any())
+
+
 class NoRuntimeWarnings(unittest.TestCase):
     def test_huge_d1_is_silent(self):
         # |d1| ~ 1e205: the normal density underflows to exactly 0, which is the right limit.
