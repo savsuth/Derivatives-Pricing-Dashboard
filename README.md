@@ -1,7 +1,7 @@
 <h1 align="center">Derivatives Pricing Dashboard</h1>
 
 <p align="center">
-  Black–Scholes prices and Greeks for European options, with every Greek checked live on the page.
+  A Black–Scholes option pricer that checks its own Greeks while you watch.
 </p>
 
 <p align="center">
@@ -17,206 +17,121 @@
   <img src="Img-1.png" alt="The dashboard: inputs on the left, pricing equations and a table of prices and Greeks on the right" width="85%" />
 </p>
 
-## Table of Contents
+## Why This Exists
 
-- [About](#about)
-- [Features](#features)
-- [Getting Started](#getting-started)
-- [Running the Tests](#running-the-tests)
-- [Usage](#usage)
-- [Edge Cases](#edge-cases)
-- [Project Layout](#project-layout)
-- [Deployment](#deployment)
-- [Limitations](#limitations)
-- [Built Using](#built-using)
-- [Author](#author)
-- [License](#license)
+An option price and its Greeks (how the price responds to changes in its inputs) can look right and still be wrong. Many calculators also break at the edges, returning `NaN` or a wrong number when volatility or time to maturity is zero.
 
-## About
+This project makes correctness visible. All numbers come from one tested model, `BlackScholes.py`, which runs in a Vercel Python function. The page only displays the results and contains no pricing math.
 
-An option's price and its Greeks (how the price responds to changes in its inputs) can look plausible and still be wrong. Many Black–Scholes calculators also fail at the edges, returning `NaN` or a wrong number when volatility or time to maturity is zero.
+## See It Work
 
-This project treats correctness as the feature. All numbers come from one tested model, `BlackScholes.py`. The page shows its work: beside each Greek is the difference between the closed-form value and a fresh numerical estimate, recalculated whenever an input changes.
+All results below use real output from the live site or the test code.
 
-The page is static. A small Vercel Python function does the pricing and returns JSON, and the browser contains no pricing math.
+### Every Greek is checked live
 
-## Features
+For S = 100, K = 100, T = 1, σ = 0.2 and r = 0.05, the page shows:
 
-- **Prices and Greeks:** call and put prices, delta, theta and rho, plus gamma, vega, vanna, volga and charm.
-- **Live checks:** each Greek is compared with a bump-and-reprice of the same model, and the prices are checked with put–call parity.
-- **Heatmaps:** call and put values across spot and volatility, with a marker at the current inputs.
-- **Defined edge cases:** zero volatility, expiry and negative rates return defined values. See [Edge Cases](#edge-cases).
-- **Implied volatility:** available from Python, with a guarded Newton solver that rejects prices outside the no-arbitrage bounds. It is not in the page yet.
+| Quantity | Call | Put | Unit | Difference |
+| --- | ---: | ---: | --- | --- |
+| Price | 10.4506 | 5.5735 | per share | 0 (put–call parity) |
+| Delta | 0.6368 | −0.3632 | per 1.00 of spot | 8.6×10⁻⁷ |
+| Theta | −0.0176 | −0.0045 | per calendar day | 1.3×10⁻¹¹ |
+| Rho | 0.5323 | −0.4189 | per 1% of rate | 9.4×10⁻¹¹ |
+| Gamma | 0.01876 | same | per 1.00 of spot | 2.3×10⁻⁸ |
+| Vega | 0.3752 | same | per volatility point | 3.0×10⁻⁹ |
+| Vanna | −0.00281 | same | delta per volatility point | 1.1×10⁻⁹ |
+| Volga | 0.000985 | same | vega per volatility point | 5.6×10⁻¹⁰ |
+| Charm | −0.000180 | same | delta per calendar day | 2.4×10⁻¹³ |
+
+The last column compares two methods. One is the closed-form formula. The other changes an input slightly, prices the option again and measures the change. The server repeats this check whenever an input changes.
+
+### The results match QuantLib
+
+The test suite compares prices and Greeks with [QuantLib](https://www.quantlib.org/) 1.44 on 2,000 random inputs. In a run of that comparison, the largest relative difference was 8.3×10⁻¹³, and the tests fail above 10⁻⁹. Charm is not available from QuantLib's calculator, so it is checked with complex-step derivatives instead.
+
+The comparison also found a difference in QuantLib's volga. Version 1.44 divides by `stdDev` (σ√T) where the formula needs σ, so its value is too small by a factor of √T. At S = K = 100, T = 4, σ = 0.2 and r = 0.05:
+
+| Source | Volga, per unit of σ² |
+| --- | ---: |
+| This model | 65.5733 |
+| Independent numerical check | 65.5734 |
+| QuantLib 1.44 | 32.7867 |
+
+The oracle test applies the √T correction, and a separate complex-step test checks volga without QuantLib.
+
+### Edge cases return defined values
+
+Each row is a request to the live API, with K = 100 and T = 1 unless the row says otherwise:
+
+| Input | Call | Put | Call delta | Gamma | Why |
+| --- | ---: | ---: | ---: | ---: | --- |
+| S = 100, σ = 0, r = 0.05 | 4.8771 | 0 | 1 | 0 | The payoff is certain, so the call is S − Ke⁻ʳᵀ |
+| S = 100, σ = 0, r = −0.02 | 0 | 2.0201 | 0 | 0 | Negative rates work, and the put is now in the money |
+| S = 110, T = 0, σ = 0.2, r = 0.05 | 10 | 0 | 1 | 0 | At expiry, the option is worth its intrinsic value |
+| S = 95.1229424500714, σ = 0, r = 0.05 | 0 | 0 | 0.5 | ∞ | Spot is at the discounted strike, the kink in the payoff |
+| S = −1, σ = 0.2, r = 0.05 | | | | | Status 400 with a message naming the valid ranges |
+
+With σ = 0, the page changes its equations and marks the Greeks as limits instead of showing bump checks:
+
+<p align="center">
+  <img src="Img-3.png" alt="The dashboard with volatility set to 0, showing a call of 4.8771 and each Greek marked as a limit" width="85%" />
+</p>
+
+### Implied volatility recovers the input
+
+The solver is available from Python and is not in the page yet:
+
+```python
+from BlackScholes import BlackScholes
+
+call, put = BlackScholes(1, 100, 100, 0.2, 0.05).run()
+print(round(call, 4), round(put, 4))  # 10.4506 5.5735
+
+sigma = BlackScholes.implied_volatility(call, 1, 100, 100, 0.05)
+print(round(sigma, 6))  # 0.2
+```
+
+It also rejects impossible prices. With S = 100, K = 90, T = 1 and r = 0.05, a call cannot be worth less than 14.39, so a price of 4 raises `ValueError: call price is outside the no-arbitrage bounds`.
+
+### Heatmaps show the whole surface
+
+The function prices each grid with one NumPy broadcast call. A cross marks the current inputs:
 
 <p align="center">
   <img src="Img-2.png" alt="Call and put heatmaps across spot and volatility, followed by notes on the model, units and checks" width="85%" />
 </p>
 
-## Getting Started
+## Run It Yourself
 
-### Prerequisites
-
-- Python 3.12 or newer, because the pinned NumPy version requires it
-- pip
-
-### Installing
-
-Clone the repository and create a virtual environment:
+You need Python 3.12 or newer, because the pinned NumPy version requires it.
 
 ```bash
 git clone https://github.com/savsuth/Derivatives-Pricing-Dashboard.git
 cd Derivatives-Pricing-Dashboard
 python3 -m venv .venv
 source .venv/bin/activate
-```
-
-Install the runtime and test dependencies:
-
-```bash
 pip install -r requirements.txt -r requirements-dev.txt
 ```
 
-Start the local server:
+Start the page at <http://localhost:3000>:
 
 ```bash
 python3 dev_server.py
 ```
 
-Open <http://localhost:3000>. To use another port, pass it as an argument, for example `python3 dev_server.py 8000`.
-
-`dev_server.py` serves the static files and sends `/api/quote` to the same handler that runs on Vercel.
-
-## Running the Tests
+Run the 50 tests:
 
 ```bash
 python3 -m unittest discover -s tests
 ```
 
-The suite has 50 tests and checks the model against independent references:
-
-| File | What it checks |
-| --- | --- |
-| `tests/test_black_scholes.py` | Textbook values, finite differences, complex-step derivatives, edge-case limits, floating-point underflow and the implied volatility solver |
-| `tests/test_oracle_and_properties.py` | QuantLib 1.44 on 2,000 random inputs, plus property-based tests of price bounds, put–call parity, strike monotonicity and convexity, and implied volatility repricing |
-| `tests/test_quote_api.py` | The API's JSON output, input validation and HTTP status codes |
-
-QuantLib 1.44's `BlackCalculator::volga` divides by `stdDev` instead of volatility, which makes its result too small by a factor of √T. The oracle test corrects for this, and a separate complex-step test checks volga independently.
-
-## Usage
-
-### In the browser
-
-Change any value in the Inputs panel, and the equations, table and heatmaps update. The last column of Table 1 shows how closely each check agrees.
-
-| Greek | Unit shown |
-| --- | --- |
-| Delta, gamma | Per 1.00 change in spot |
-| Vega | Per volatility point |
-| Rho | Per 1% change in the rate |
-| Theta | Per calendar day |
-| Vanna | Change in delta per volatility point |
-| Volga | Change in vega per volatility point |
-| Charm | Change in delta per calendar day |
-
-### From the API
-
-Send a `GET` request to `/api/quote`:
+## Call the API
 
 ```bash
 curl "https://derivatives-pricing-dashboard.vercel.app/api/quote?S=100&K=100&T=1&sigma=0.2&r=0.05"
 ```
 
-| Parameter | Required | Meaning | Default |
-| --- | --- | --- | --- |
-| `S` | Yes | Spot price | |
-| `K` | Yes | Strike price | |
-| `T` | Yes | Time to maturity in years | |
-| `sigma` | Yes | Volatility, where 0.2 means 20% | |
-| `r` | Yes | Risk-free rate, where 0.05 means 5% | |
-| `spot_min` | No | Lowest heatmap spot | `0.6 * S` |
-| `spot_max` | No | Highest heatmap spot | `1.4 * S` |
-| `vol_min` | No | Lowest heatmap volatility | `0.05` |
-| `vol_max` | No | Highest heatmap volatility | `max(sigma, 0.6)` |
-
-The response is JSON with the keys `inputs`, `degenerate`, `prices`, `greeks`, `checks` and `heatmap`. For the request above, the prices are:
-
-```json
-{ "call": 10.450583572185565, "put": 5.573526022256971 }
-```
-
-Invalid inputs return status 400 with an `error` message. JSON has no infinity value, so an infinite Greek is returned as the string `"inf"` or `"-inf"`. A check is `null` when no bump can be made because σ√T = 0.
-
-### From Python
-
-Run this from the repository root:
-
-```python
-from BlackScholes import BlackScholes
-
-# Arguments: time to maturity, strike, spot, volatility, rate
-model = BlackScholes(1, 100, 100, 0.2, 0.05)
-call, put = model.run()
-print(round(call, 4), round(put, 4))  # 10.4506 5.5735
-print(round(model.call_delta, 4), round(model.vega, 4))  # 0.6368 0.3752
-
-# Arguments: option price, time to maturity, strike, spot, rate
-sigma = BlackScholes.implied_volatility(call, 1, 100, 100, 0.05)
-print(round(sigma, 6))  # 0.2
-```
-
-Inputs can also be NumPy arrays, which broadcast. The heatmaps use this to price a whole grid in one call:
-
-```python
-import numpy as np
-from BlackScholes import BlackScholes
-
-spots = np.linspace(60, 140, 10)
-vols = np.linspace(0.05, 0.6, 10)
-calls, puts = BlackScholes(1, 100, spots[None, :], vols[:, None], 0.05).run()
-print(calls.shape)  # (10, 10)
-```
-
-In one local measurement, this was 37 times faster than the original Python loop on a 10x10 grid and 513 times faster on a 100x100 grid.
-
-## Edge Cases
-
-| Input | Result |
-| --- | --- |
-| σ = 0, T > 0 | The payoff is certain, so the call is `max(S - K * exp(-r * T), 0)`. With S = K = 100, T = 1 and r = 0.05, that is 4.87705755. |
-| T = 0 | Each option is worth its intrinsic value, so the call is `max(S - K, 0)`. |
-| S exactly at the discounted strike, with σ = 0 or T = 0 | Call delta is 0.5, put delta is -0.5, and gamma is infinite. |
-| r < 0 | Supported. |
-| σ√T too small for floating point | Treated as σ = 0. |
-| T < 0, σ < 0, S ≤ 0, K ≤ 0, or a non-finite value | Python raises `ValueError`, and the API returns status 400. |
-
-When σ = 0 or T = 0, every Greek reports its limit as σ or T approaches zero. Limits that diverge are returned as positive or negative infinity.
-
-## Project Layout
-
-| Path | Purpose |
-| --- | --- |
-| `BlackScholes.py` | The pricing model, Greeks and implied volatility solver |
-| `api/quote.py` | Vercel function that returns the model's results as JSON |
-| `index.html`, `styles.css`, `app.js` | The page, with no build step |
-| `dev_server.py` | Local server that stands in for Vercel |
-| `tests/` | Unit, oracle, property and API tests |
-| `vercel.json`, `.vercelignore`, `.python-version` | Deployment settings |
-| `PRODUCT.md`, `DESIGN.md` | Product and visual design records |
-
-## Deployment
-
-The project deploys to Vercel as static files plus one Python function. Vercel installs the function's dependencies from `requirements.txt`, and `.vercelignore` limits the upload to the files the site needs.
-
-Project names on Vercel must be lowercase, so create and link the project by name:
-
-```bash
-npx vercel login
-npx vercel project add derivatives-pricing-dashboard
-npx vercel link --yes --project derivatives-pricing-dashboard
-npx vercel deploy --prod --yes
-```
-
-Vercel CLI 62.2.0 could not run this Python function with `vercel dev`, so use `python3 dev_server.py` for local work.
+`S`, `K`, `T`, `sigma` and `r` are required. The optional `spot_min`, `spot_max`, `vol_min` and `vol_max` set the heatmap ranges. The JSON response has the keys `inputs`, `degenerate`, `prices`, `greeks`, `checks` and `heatmap`. An infinite Greek is returned as the string `"inf"` or `"-inf"`, and a check is `null` when no bump can be made.
 
 ## Limitations
 
@@ -226,17 +141,6 @@ Vercel CLI 62.2.0 could not run this Python function with `vercel dev`, so use `
 - The first request after an idle period can take a few seconds while the function starts.
 - It is for education and is not investment advice.
 
-## Built Using
-
-- [NumPy](https://numpy.org/) and [SciPy](https://scipy.org/) for the model
-- [Vercel Python Functions](https://vercel.com/docs/functions/runtimes/python) for the API
-- HTML, CSS and JavaScript for the page, with [KaTeX](https://katex.org/) for equations and [STIX Two Text](https://www.stixfonts.org/) for type
-- [QuantLib](https://www.quantlib.org/) and [Hypothesis](https://hypothesis.readthedocs.io/) for testing
-
-## Author
-
-[Aasav Suthar](https://github.com/savsuth)
-
 ## License
 
-This project is available under the [MIT License](LICENSE).
+[MIT](LICENSE), by [Aasav Suthar](https://github.com/savsuth).
