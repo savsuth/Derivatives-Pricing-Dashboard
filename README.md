@@ -135,4 +135,4 @@ curl "https://derivatives-pricing-dashboard.vercel.app/api/quote?S=100&K=100&T=1
 
 ## License
 
-[MIT](LICENSE), by [Aasav Suthar](https://github.com/savsuth).
+[MIT](LICENSE)
